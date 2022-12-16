@@ -251,6 +251,7 @@ if (auth == undefined) {
         if (0 == user.perm_settings) { $('#product_sales_row').hide() };
         if (0 == user.perm_users) { $(".p_four").hide() };
         if (0 == user.perm_settings) { $(".p_five").hide() };
+        if (0 == user.perm_transactions) { $("#deleteHoldOrder").hide()}
      
      async  function loadAllProducts() {
 
@@ -1645,34 +1646,63 @@ function searchSingleProduct() {
         $.fn.randerHoldOrders = function (data, renderLocation, orderType) {
             $.each(data, function (index, order) {
                 $(this).calculatePrice(order);
-                renderLocation.append(
-                    $('<div>', { class: orderType == 1 ? 'col-md-3 order' : 'col-md-3 customer-order' }).append(
-                        $('<a>').append(
-                            $('<div>', { class: 'card-box order-box' }).append(
-                                $('<p>').append(
-                                    $('<b>', { text: 'Ref :' }),
-                                    $('<span>', { text: order.ref_number, class: 'ref_number' }),
-                                    $('<br>'),
-                                    $('<b>', { text: 'Price :' }),
-                                    $('<span>', { text: order.total, class: "label label-info", style: 'font-size:14px;' }),
-                                    $('<br>'),
-                                    $('<b>', { text: 'Items :' }),
-                                    $('<span>', { text: order.items.length }),
-                                    $('<br>'),
-                                    $('<b>', { text: 'Customer :' }),
-                                    $('<span>', { text: order.customer != 0 ? order.customer.name : 'Walk in customer', class: 'customer_name' })
-                                ),
-                                $('<button>', { class: 'btn btn-danger del', onclick: '$(this).deleteOrder(' + index + ',' + orderType + ','+false+')' }).append(
-                                    $('<i>', { class: 'fa fa-trash' })
-                                ),
-
-                                $('<button>', { class: 'btn btn-default', onclick: '$(this).orderDetails(' + index + ',' + orderType + ')' }).append(
-                                    $('<span>', { class: 'fa fa-shopping-basket' })
+                if(!(0 == user.perm_transactions)){
+                    renderLocation.append(
+                        $('<div>', { class: orderType == 1 ? 'col-md-3 order' : 'col-md-3 customer-order' }).append(
+                            $('<a>').append(
+                                $('<div>', { class: 'card-box order-box' }).append(
+                                    $('<p>').append(
+                                        $('<b>', { text: 'Ref :' }),
+                                        $('<span>', { text: order.ref_number, class: 'ref_number' }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Price :' }),
+                                        $('<span>', { text: order.total, class: "label label-info", style: 'font-size:14px;' }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Items :' }),
+                                        $('<span>', { text: order.items.length }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Customer :' }),
+                                        $('<span>', { text: order.customer != 0 ? order.customer.name : 'Walk in customer', class: 'customer_name' })
+                                    ),
+                                  
+                                    $('<button>', { class: 'btn btn-danger  del', id: 'deleteHoldOrder', onclick: '$(this).deleteOrder(' + index + ',' + orderType + ','+false+')' }).append(
+                                        $('<i>', { class: 'fa fa-trash' })
+                                    ),
+    
+                                    $('<button>', { class: 'btn btn-default', onclick: '$(this).orderDetails(' + index + ',' + orderType + ')' }).append(
+                                        $('<span>', { class: 'fa fa-shopping-basket' })
+                                    )
                                 )
                             )
                         )
                     )
-                )
+                }else{
+                    renderLocation.append(
+                        $('<div>', { class: orderType == 1 ? 'col-md-3 order' : 'col-md-3 customer-order' }).append(
+                            $('<a>').append(
+                                $('<div>', { class: 'card-box order-box' }).append(
+                                    $('<p>').append(
+                                        $('<b>', { text: 'Ref :' }),
+                                        $('<span>', { text: order.ref_number, class: 'ref_number' }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Price :' }),
+                                        $('<span>', { text: order.total, class: "label label-info", style: 'font-size:14px;' }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Items :' }),
+                                        $('<span>', { text: order.items.length }),
+                                        $('<br>'),
+                                        $('<b>', { text: 'Customer :' }),
+                                        $('<span>', { text: order.customer != 0 ? order.customer.name : 'Walk in customer', class: 'customer_name' })
+                                    ),
+                                    $('<button>', { class: 'btn btn-default', onclick: '$(this).orderDetails(' + index + ',' + orderType + ')' }).append(
+                                        $('<span>', { class: 'fa fa-shopping-basket' })
+                                    )
+                                )
+                            )
+                        )
+                    )
+                }
+               
             })
         }
 
@@ -3488,13 +3518,22 @@ function loadTransacts() {
                     $('#total_transactions_1 #counter').text(transact);
                     $('#total_tax_payable #counter').text(numberWithCommas(parseFloat(sales*(15/115)).toFixed(2)));
                     $('#trans_currency').text(settings.symbol);
+                    transaction_list += `<tr>
+                    <td style = "background-colo:green"><b>TOTAL SALES: ${numberWithCommas(parseFloat(sales).toFixed(2))}</b></td>
+                    <td><b>TOTAL TAX PAYABLE: ${numberWithCommas(parseFloat(totalTax).toFixed(2))}</b></td>
+                    <td><b>NO OF TRANSACTIONS: ${numberWithCommas(transact)}</b></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    </tr>       
+        `;   
+           
                     
-                    // sales_summary += `<tr>
-                    //                 <td>${text(numberWithCommas(parseFloat(sales).toFixed(2)))}</td>
-                    //                 <td>${text(transact)}</td>
-                    //                 <td>${text(numberWithCommas(parseFloat(sales*0.15).toFixed(2)))}</td>
-                    //                 ${last_sales_summary}
-                    //             <tr>`
                     
                     const result = {};
                     
@@ -4445,6 +4484,7 @@ $('#applydaterange').click(function () {
 
     
     loadTransactions();
+    
     
 });
 

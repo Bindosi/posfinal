@@ -13351,3 +13351,4 @@
 {"_id":"6392e8ec32a3a4d011b6bb6e1670572268","barcode":12345678,"price":"25000","itemId":"2","category":"1670180470","quantity":"2","name":"TESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}
 {"_id":"6392eb258c27cb5c3cc06ff01670572837","barcode":23434523452345,"price":"45000","itemId":"1","category":"1670180470","quantity":"23","name":"NEW TESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}
 {"_id":"6392eb88b07301704643accb1670572936","barcode":2323532534,"price":23000,"itemId":"1","category":"1670180470","quantity":"11","name":"RESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}
+{"_id":"639c531c30716741c24e21fa1671189276","barcode":12346798323,"price":34500,"itemId":"216","category":"1670238671","quantity":"23","name":"Wali mweupe","expiredate":"2023-01-31","brand":"bul bul","stock":1,"img":""}
