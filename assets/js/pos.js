@@ -17,6 +17,8 @@ let holdOrder = 0;
 let vat = 0;
 let perms = null;
 let deleteId = 0;
+let recalledTransactionId = ''
+let isRecalledTransaction = false
 let paymentType = 0;
 let receipt = '';
 let totalVat = 0;
@@ -796,6 +798,8 @@ function searchSingleProduct() {
             let thisCartsVat = 0;
             let grossTotal;
             let vatExclusive = 0;
+            let customer_name = '';
+            let phoneNumber = ''
             $('#total').text(cart.length);
             $.each(cart, function (index, data) {
                 total += data.quantity * data.price;
@@ -832,11 +836,24 @@ function searchSingleProduct() {
 
             }
 
+            if(isRecalledTransaction){
+                let recalledtransaction = allTransactions.filter(function(recalledTransac){
+                    return recalledTransac._id == recalledTransactionId;
+
+                })
+
+                customer_name = recalledtransaction[0].customer
+                phoneNumber = recalledtransaction[0].phoneNumber
+               
+            }
+
             orderTotal = grossTotal.toFixed(2);
             $("#vat_exclusive").text(numberWithCommas(vatExclusive.toFixed(2)));
             $("#gross_price").text(settings.symbol + " " + numberWithCommas(grossTotal.toFixed(2)));
             $("#payablePrice").val(grossTotal);
             $("#payment").val(grossTotal);
+            $('#salesCustomerName').val(customer_name)
+            $('#salesCustomerPhone').val(phoneNumber)
         };
 
 
@@ -1124,17 +1141,21 @@ function searchSingleProduct() {
 
             $(".loading").show();
 
-
+          
             if (holdOrder != 0) {
 
                 orderNumber = holdOrder;
                 method = 'PUT'
-            }
-            else {
+            }else if(isRecalledTransaction){
+                orderNumber = recalledTransactionId
+                method = 'PUT'
+            }else{
                 orderNumber = Math.floor(Date.now() / 1000);
                 console.log(orderNumber);
                 method = 'POST'
             }
+
+            
 
             let customerQuery = {
                 phoneNumber: phoneNumber,
@@ -1194,6 +1215,7 @@ function searchSingleProduct() {
                     order: orderNumber,
                     ref_number: refNumber,
                     customer: customer,
+                    phoneNumber: phoneNumber,
                     status: status,
                     subtotal: parseFloat(subTotal),
                     tax: ZRBtaxAmount,
@@ -1305,9 +1327,15 @@ function searchSingleProduct() {
                     cache: false,
                     processData: false,
                     success: function (data) {
-    
-                        cart = [];
                         
+                        cart = [];
+                        recalledTransactionId = '';
+                       if(holdOrder != 0){
+                            $.fn.deleteOrder(order_index, orderType, true)
+                        }
+
+                        order_index = 0;
+                      
                         $('#viewTransaction').html('');
                         $('#viewTransaction').html(receipt);
                         $('#orderModal').modal('show');
@@ -1443,9 +1471,12 @@ function searchSingleProduct() {
 
                 orderNumber = holdOrder;
                 method = 'PUT'
-            }
-            else {
+            }else if(isRecalledTransaction){
+                orderNumber = recalledTransactionId
+                method = 'PUT'
+            }else{
                 orderNumber = Math.floor(Date.now() / 1000);
+                console.log(orderNumber);
                 method = 'POST'
             }
 
@@ -1631,7 +1662,7 @@ function searchSingleProduct() {
                                     $('<b>', { text: 'Customer :' }),
                                     $('<span>', { text: order.customer != 0 ? order.customer.name : 'Walk in customer', class: 'customer_name' })
                                 ),
-                                $('<button>', { class: 'btn btn-danger del', onclick: '$(this).deleteOrder(' + index + ',' + orderType + ')' }).append(
+                                $('<button>', { class: 'btn btn-danger del', onclick: '$(this).deleteOrder(' + index + ',' + orderType + ','+false+')' }).append(
                                     $('<i>', { class: 'fa fa-trash' })
                                 ),
 
@@ -1672,7 +1703,7 @@ function searchSingleProduct() {
                 $("#customer option").filter(function () {
                     return $(this).text() == "Walk in customer";
                 }).prop("selected", true);
-
+                order_index = index
                 holdOrder = holdOrderList[index]._id;
                 cart = [];
                 $.each(holdOrderList[index].items, function (index, product) {
@@ -1715,7 +1746,7 @@ function searchSingleProduct() {
                 })
             }
             $(this).renderTable(cart);
-          //  $.fn.deleteOrder(index, orderType)
+         
             $("#holdOrdersModal").modal('hide');
             $("#customerModal").modal('hide');
         }
@@ -1735,7 +1766,8 @@ function searchSingleProduct() {
                     return $(this).text() == "Walk in customer";
                 }).prop("selected", true);
 
-                let recalledTransactionId = transactions[index]._id;
+                 recalledTransactionId = transactions[index]._id;
+                 isRecalledTransaction = true
                 cart = [];
                 $.each(transactions[index].items, function (index, product) {
                     item = {
@@ -1760,7 +1792,8 @@ function searchSingleProduct() {
                     return $(this).text() == customerOrderList[index].customer.name;
                 }).prop("selected", true);
 
-
+                recalledTransactionId = transactions[index]._id;
+                isRecalledTransaction = true
                 holdOrder = customerOrderList[index]._id;
                 cart = [];
                 $.each(customerOrderList[index].items, function (index, product) {
@@ -1785,7 +1818,7 @@ function searchSingleProduct() {
         }
 
 
-        $.fn.deleteOrder = function (index, type) {
+        $.fn.deleteOrder = function (index, type, savedOrder) {
 
             switch (type) {
                 case 1: deleteId = holdOrderList[index]._id;
@@ -1796,43 +1829,69 @@ function searchSingleProduct() {
             let data = {
                 orderId: deleteId,
             }
+if(!savedOrder){
+    Swal.fire({
+        title: "Delete order?",
+        text: "This will delete the order. Are you sure you want to delete!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
 
-            Swal.fire({
-                title: "Delete order?",
-                text: "This will delete the order. Are you sure you want to delete!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
+        if (result.value) {
 
-                if (result.value) {
+            $.ajax({
+                url: api + 'delete',
+                type: 'POST',
+                data: JSON.stringify(data),
+                contentType: 'application/json; charset=utf-8',
+                cache: false,
+                success: function (data) {
 
-                    $.ajax({
-                        url: api + 'delete',
-                        type: 'POST',
-                        data: JSON.stringify(data),
-                        contentType: 'application/json; charset=utf-8',
-                        cache: false,
-                        success: function (data) {
+                    $(this).getHoldOrders();
+                    $(this).getCustomerOrders();
 
-                            $(this).getHoldOrders();
-                            $(this).getCustomerOrders();
+                    Swal.fire(
+                        'Deleted!',
+                        'You have deleted the order!',
+                        'success'
+                    )
 
-                            Swal.fire(
-                                'Deleted!',
-                                'You have deleted the order!',
-                                'success'
-                            )
+                }, error: function (data) {
+                    $(".loading").hide();
 
-                        }, error: function (data) {
-                            $(".loading").hide();
-
-                        }
-                    });
                 }
             });
+        }
+    });
+
+}else{
+    $.ajax({
+        url: api + 'delete',
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'application/json; charset=utf-8',
+        cache: false,
+        success: function (data) {
+
+            $(this).getHoldOrders();
+            $(this).getCustomerOrders();
+
+            Swal.fire(
+                'Deleted!',
+                'Order removed from Open orders!',
+                'success'
+            )
+
+        }, error: function (data) {
+            $(".loading").hide();
+
+        }
+    });
+}
+        
         }
 
         $.fn.deleteAllTransactions = function () {
@@ -2016,13 +2075,12 @@ function searchSingleProduct() {
             }
             else {
                 console.log('this is the network status'+network_status);
-                if(1){
-              
+                console.log('this is a recalled transaction'+isRecalledTransaction)
+                if(isRecalledTransaction){
                     $(this).submitDueOrderOnline(1);
             }else{
-                 
-                    $(this).submitDueOrderOffline(1);
-            }
+                    $(this).submitDueOrderOnline(1);
+                }
             }
         });
 
@@ -3487,7 +3545,7 @@ function loadTransacts() {
     if(start_date ==''|| end_date ==''){
         alert('please input start and end dates!')
     }else{
-        showSalesByCategory(desireCategory, start_date,end_date)    
+        showSalesByCategory(desireCategory, start_date, end_date)    
     }
 
      
@@ -3497,6 +3555,8 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
 
     document.getElementById("categoryStartDateLabel").textContent = moment(start_date).format('DD-MMM-YYYY, HH:mm:ss')
     document.getElementById("categoryEndDateLabel").textContent=moment(end_date).format('DD-MMM-YYYY, HH:mm:ss');
+    let tills = [];
+    let users = [];
     let required_categories_sales_list = '';
     let allSoldCategoryDetails = [];
     let soldCategories = [];
@@ -3524,6 +3584,15 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
         transactionItems.forEach((transactionItem,index)=>{
             soldItems.push(transactionItem);
         })
+
+
+        if (!tills.includes(transaction.till)) {
+            tills.push(transaction.till);
+        }
+
+        if (!users.includes(transaction.user_id)) {
+            users.push(transaction.user_id);
+        }
 
     })
     
@@ -3640,6 +3709,10 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
 
                 </tr>`
             }        
+            if (by_user == 0 && by_till == 0) {
+                userFilterCategories(users)
+                tillFilter(tills);
+            }
         document.getElementById('getcategorysalesitems').reset();
         $('#required_categories_sales_list').html(required_categories_sales_list);
         $('#requiredCategorySalesList').DataTable({
@@ -3661,6 +3734,8 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
 
 function loadSoldCategoryList() {
     console.log('load all category sales method was invoked')
+    let tills = [];
+    let users = [];
     let categories_sales_list = '';
     let soldCategories = [];
     let counter = 0;
@@ -3685,6 +3760,15 @@ function loadSoldCategoryList() {
         transactionItems.forEach((transactionItem,index)=>{
             soldItems.push(transactionItem);
         })
+
+
+        if (!tills.includes(transaction.till)) {
+            tills.push(transaction.till);
+        }
+
+        if (!users.includes(transaction.user_id)) {
+            users.push(transaction.user_id);
+        }
     })
 
     console.log('these are all items'+soldItems)
@@ -3811,6 +3895,11 @@ function loadSoldCategoryList() {
 
 
         console.log('this is main total'+numberWithCommas(totalForAll))
+       
+        if (by_user == 0 && by_till == 0) {
+            userFilterCategories(users)
+            tillFilter(tills);
+        }
         
         
         $('#categories_sales_list').html(categories_sales_list);
@@ -3866,19 +3955,16 @@ function loadTransactions() {
           //  console.log('these are all transactions'+allTransactions);
 
             transactions.forEach((trans, index) => {
-                
-
                 if(trans.flag =='Connected'){
 
                 sales += parseFloat(trans.total);
+
                 totalTax += parseFloat(trans.tax)
 
-               console.log('transaction no '+index+' sale '+sales+'transaction flag '+trans.flag)
+             //  console.log('transaction no '+index+' sale '+sales+'transaction flag '+trans.flag)
 
                 transact++;
-
                 }
-                
                 if(trans.flag =='Error'){
                     if(trans.saved == 'true'){
                     sales += 0.0; 
@@ -3887,7 +3973,8 @@ function loadTransactions() {
                     transact++;
                     sales += parseFloat(trans.total);
                     totalTax += parseFloat(trans.tax)
-             //       console.log('transaction no'+index+'sale'+sales+'transaction flag'+trans.flag)
+
+             //   console.log('transaction no'+index+'sale'+sales+'transaction flag'+trans.flag)
 
                 }
             } 
@@ -4087,6 +4174,21 @@ function userFilter(users) {
         });
 
         $('#users').append(`<option value="${user}">${u[0].fullname}</option>`);
+    });
+
+}
+
+function userFilterCategories(users) {
+
+    $('#usersOnCategory').empty();
+    $('#usersOnCategory').append(`<option value="0">All</option>`);
+
+    users.forEach(user => {
+        let u = allUsers.filter(function (usr) {
+            return usr._id == user;
+        });
+
+        $('#usersOnCategory').append(`<option value="${user}">${u[0].fullname}</option>`);
     });
 
 }
