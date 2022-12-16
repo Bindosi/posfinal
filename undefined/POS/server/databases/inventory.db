@@ -13346,8 +13346,8 @@
 {"_id":"638ec7bd841f7c4a4a0db8a1","price":3500,"itemId":0,"discount":0,"category":"1670238341","brand":"POCARI","quantity":50,"barcode":8997035600133,"expiredate":"2059-07-15T20:59:44.000Z","name":"Pocari sweat 330ml","stock":1}
 {"_id":"638ec7bd841f7c4a4a0db8a2","barcode":8699025780060,"price":4500,"itemId":0,"discount":0,"category":"1670238671","quantity":50,"name":"Juss 100% apple juice 1ltr","expiredate":"2059-07-16T20:59:44.000Z","brand":"JUSS","stock":1}
 {"_id":"638ee0d32266298e045e3afd1670308051","barcode":23344556677,"price":30000,"itemId":"216","category":"1670180470","quantity":"40","name":"Wawi sheli sheli","expiredate":"2022-12-06","brand":"Wawi","stock":1,"img":""}
-{"_id":"6391fc15e13257217df84dc71670511637","barcode":1670511622,"price":123845.93549049631,"itemId":"0","category":"1670508208","quantity":"100","name":"Pasi","expiredate":"","brand":"GENERAL","stock":1,"img":""}
-{"_id":"6391fd1de232181628bcb1081670511901","barcode":1670511889,"price":227050.8817325765,"itemId":"0","category":"1670508208","quantity":"100","name":"TAULO","expiredate":"","brand":"GENERAL","stock":1,"img":""}
+{"_id":"6391fc15e13257217df84dc71670511637","barcode":1670511622,"price":18000,"itemId":"0","category":"1670508208","quantity":"100","name":"Pasi","expiredate":"","brand":"GENERAL","stock":1,"img":""}
+{"_id":"6391fd1de232181628bcb1081670511901","barcode":1670511889,"price":40400,"itemId":"0","category":"1670508208","quantity":"100","name":"TAULO","expiredate":"","brand":"GENERAL","stock":1,"img":""}
 {"_id":"6392e8ec32a3a4d011b6bb6e1670572268","barcode":12345678,"price":"25000","itemId":"2","category":"1670180470","quantity":"2","name":"TESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}
 {"_id":"6392eb258c27cb5c3cc06ff01670572837","barcode":23434523452345,"price":"45000","itemId":"1","category":"1670180470","quantity":"23","name":"NEW TESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}
 {"_id":"6392eb88b07301704643accb1670572936","barcode":2323532534,"price":23000,"itemId":"1","category":"1670180470","quantity":"11","name":"RESTII","expiredate":"2022-12-09","brand":"WAWI","stock":1,"img":""}

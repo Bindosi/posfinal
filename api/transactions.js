@@ -130,10 +130,13 @@ app.get("/customer-orders", function(req, res) {
 
 app.get("/by-date", function(req, res) {
 
-  let startDate = moment(req.query.start).toDate()
- // new Date(req.query.start);
+  let startDate = moment(req.query.start,).toDate()
+ // let startDate =  moment(req.query.start.toString(), "DD MM YYYY hh:mm:ss");
+  //console.log('this is date'+startDate)
+ // let endDate =  moment(req.query.end.toString(), "DD MM YYYY hh:mm:ss");
+
   let endDate = moment(req.query.end).toDate()
-  //new Date(req.query.end);
+
   
  // console.log('this is start'+startDate.toISOString()+'this is end'+endDate.toISOString())
 
@@ -144,11 +147,11 @@ app.get("/by-date", function(req, res) {
           console.log('we start here')
       docs.forEach((transaction,index) => {
       
-          console.log('tras date'+transaction.date)
-          console.log('query start date'+startDate.toJSON())
+        //  console.log('tras date'+transaction.date)
+        //  console.log('query start date'+startDate.toJSON())
         
           });
-          console.log('query end date date'+endDate.toJSON())
+        //  console.log('query end date date'+endDate.toJSON())
           if (docs) res.send(docs);
         }
         
@@ -198,8 +201,8 @@ app.post("/deleteTransactions", function(req, res){
 
 app.post("/new", function(req, res) {
   let newTransaction = req.body;
- console.log('New transaction received'+ newTransaction._id)
- console.log('The new transaction received is'+ JSON.stringify(newTransaction))
+ //console.log('New transaction received'+ newTransaction._id)
+ //console.log('The new transaction received is'+ JSON.stringify(newTransaction))
   transactionsDB.insert(newTransaction, function(err, transaction) {    
     if (err) res.status(500).send(err);
     else {
@@ -231,8 +234,8 @@ app.post("/save", function(req, res) {
 app.put("/new", function(req, res) {
   let oderId = req.body._id;
   let recalledTransaction = req.body
-  console.log('transaction received'+req.body._id)
-  console.log('this is the transaction received'+JSON.stringify(req.body))
+ // console.log('transaction received'+req.body._id)
+ // console.log('this is the transaction received'+JSON.stringify(req.body))
 
   transactionsDB.update( {_id: parseInt(req.body._id)}, recalledTransaction, function (
       err,
@@ -270,6 +273,18 @@ app.post( "/delete", function ( req, res ) {
       else res.sendStatus( 200 );
   } );
 } );
+
+app.delete( "/deleteById:transactionId", function ( req, res ) {
+  let transactionId =  parseInt(req.params.transactionId) 
+  console.log('this is to be deleted'+ transactionId)
+   transactionsDB.remove( {
+       _id: transactionId 
+   }, function ( err, numRemoved ) {
+       if ( err ) res.status( 500 ).send( err );
+       else res.sendStatus( 200 );
+   } );
+ } );
+ 
 
 
 

@@ -70,6 +70,7 @@ app.post( "/category/imported", function ( req, res ) {
 
 
 app.delete( "/category/:categoryId", function ( req, res ) {
+    console.log('this category is to be deleted'+parseInt(req.body.categoryId))
     categoryDB.remove( {
         _id: parseInt(req.params.categoryId)
     }, function ( err, numRemoved ) {

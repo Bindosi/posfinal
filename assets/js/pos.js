@@ -297,7 +297,7 @@ if (auth == undefined) {
                   
                     console.log('this is the old price'+product.price)
                     
-                    product.price = (product.price)*(1+increase);
+                    product.price = Math.ceil((product.price)*(1+increase)/100)*100 ;
                    
                     console.log('this is the new price'+ product.price)
 
@@ -1894,12 +1894,49 @@ if(!savedOrder){
         
         }
 
+        $.fn.deleteTransactionById= function (transactionId) {
+            Swal.fire({
+                title: "Delete order?",
+                text: "This will delete the order. Are you sure you want to delete!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+        
+                if (result.value) {
+                    console.log('thasaction to be deleted'+transactionId)
+                    $.ajax({
+                        url: api + 'deleteById'+transactionId,
+                        type: 'DELETE',
+                        contentType: 'application/json; charset=utf-8',
+                        cache: false,
+                        success: function (data) {
+
+                            Swal.fire(
+                                'Deleted!',
+                                'You have deleted the order!',
+                                'success'
+                            )
+        
+                        }, error: function (data) {
+                            $(".loading").hide();
+        
+                        }
+                    });
+                }
+            });
+        }
+
         $.fn.deleteAllTransactions = function () {
             $.get(api + 'deleteTransactions', function (data) {
                 console.log('all transactions data deleted');
                 console.log('operation status'+data);
             });
         }
+
+      
 
         $('#deleteAllTransactions').click(function () {
 
@@ -2799,7 +2836,7 @@ if(!savedOrder){
         }
 
 
-        $.fn.deleteCategory = function (id) {
+        $.fn.deleteCategory = function (categoryId) {
             Swal.fire({
                 title: 'Are you sure?',
                 text: "You are about to delete this category.",
@@ -2811,10 +2848,12 @@ if(!savedOrder){
             }).then((result) => {
 
                 if (result.value) {
-
+                    console.log('this is the category to be deleted'+categoryId)
                     $.ajax({
-                        url: api + 'categories/category/' + id,
+                        url: api + 'categories/category/'+categoryId,
                         type: 'DELETE',
+                        contentType: 'application/json; charset=utf-8',
+                        cache: false,
                         success: function (result) {
                             loadCategories();
                             Swal.fire(
@@ -2987,7 +3026,7 @@ if(!savedOrder){
             <td>${thiscategory._id}</td>
             <td>${thiscategory.name}</td>
             <td>${categoryItemCount}</td>
-            <td><span class="btn-group"><button onClick="$(this).editCategory(${index})" class="btn btn-warning"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteCategory(${category._id})" class="btn btn-danger"><i class="fa fa-trash"></i></button></span></td></tr>`;
+            <td><span class="btn-group"><button onClick="$(this).editCategory(${index})" class="btn btn-warning"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteCategory(${thiscategory._id})" class="btn btn-danger"><i class="fa fa-trash"></i></button></span></td></tr>`;
             });
 
             if (counter == allCategories.length) {
@@ -3563,6 +3602,7 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
     let counter = 0;
     let soldItems = [];
     let totalForChosenCategory = 0;
+   // let categoryName = '';
   
     let query = `by-date?start=${start_date}&end=${end_date}&user=${by_user}&status=${by_status}&till=${by_till}`;
 
@@ -4031,8 +4071,8 @@ function loadTransactions() {
                                 <td>${trans.user}</td>
                                 <td>${trans.flag}</td>
                                 <td><button class="btn btn-dark"><i class="fa fa-save"></i></button></td>
-                                <td>${trans.paid == "" ? '<button class="btn btn-dark"><i class="fa fa-search-plus"></i></button>' : '<button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></td>'}
-                                <td>${'<button onClick="$(this).orderRecall('+index+',1)" class="btn btn-dark"><i class="fa fa-hand"></i></button></td>'}</td>
+                                <td>${'<span class="btn-group"><button onClick="$(this).orderRecall('+index+',1)" class="btn btn-warning"><i class="fa fa-hand-paper-o"></i></button><button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></span></td>'}
+                                <td>${'<button onClick="" class="btn btn-danger"><i class="fa fa-trash"></i></button></td>'}</td>
                                 </tr>
                     `;
                 }else{
@@ -4048,8 +4088,8 @@ function loadTransactions() {
                                 <td>${trans.user}</td>
                                 <td>${trans.flag}</td>
                                 <td>${'<button onClick="$(this).saveTransaction('+index+')" class="btn btn-dark"><i class="fa fa-save"></i></button></td>'}
-                                <td>${trans.paid == "" ? '<button class="btn btn-dark"><i class="fa fa-search-plus"></i></button>' : '<button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></td>'}
-                                <td>${'<button onClick="$(this).orderRecall('+index+',1)" class="btn btn-dark"><i class="fa fa-hand"></i></button></td>'}
+                                <td>${'<span class="btn-group"><button onClick="$(this).orderRecall('+index+',1)" class="btn btn-warning"><i class="fa fa-hand-paper-o"></i></button><button onClick="$(this).viewTransaction(' + index + ')" class="btn btn-info"><i class="fa fa-search-plus"></i></button></span></td>'}
+                                <td>${'<button onClick="$(this).deleteTransactionById('+trans._id+')" class="btn btn-danger"><i class="fa fa-trash"></i></button></td>'}
                                 </tr>
                                 
                     `;
@@ -4172,8 +4212,9 @@ function userFilter(users) {
         let u = allUsers.filter(function (usr) {
             return usr._id == user;
         });
-
+        if(u.length>0){
         $('#users').append(`<option value="${user}">${u[0].fullname}</option>`);
+        }
     });
 
 }
@@ -4187,8 +4228,10 @@ function userFilterCategories(users) {
         let u = allUsers.filter(function (usr) {
             return usr._id == user;
         });
-
-        $('#usersOnCategory').append(`<option value="${user}">${u[0].fullname}</option>`);
+        if(u.length>0){
+            $('#usersOnCategory').append(`<option value="${user}">${u[0].fullname}</option>`);
+        }
+       
     });
 
 }
@@ -4395,8 +4438,10 @@ $('#reportrange').on('apply.daterangepicker', function (ev, picker) {
 
 $('#applydaterange').click(function () {
 
-    start_date = moment($('#transactionStartDate').val())
-    end_date = moment($('#transactionEndDate').val())
+   start_date = moment($('#transactionStartDate').val())
+    // start_date=  moment($('#transactionStartDate').val().toString(), "DD MM YYYY hh:mm:ss");
+    // end_date =  moment($('#transactionEndDate').val().toString(), "DD MM YYYY hh:mm:ss");
+  end_date = moment($('#transactionEndDate').val())
 
     
     loadTransactions();
