@@ -281,25 +281,43 @@ if (auth == undefined) {
           let requiredpercentage = $('#requiredpercentage').val()
           let targetCategory =  $('#categoryselect').val()
            
-             increasePriceByPercentage(targetCategory, requiredpercentage)
+             increasePriceByPercentage(targetCategory, requiredpercentage,"increase")
              
             }
         )
 
-        function increasePriceByPercentage(category, percentage){
+        $('#percentageDecrease').click(function(){
+            
+            let requiredpercentage = $('#requiredpercentage').val()
+            let targetCategory =  $('#categoryselect').val()
+             
+               increasePriceByPercentage(targetCategory, requiredpercentage, "decrease")
+               
+              }
+          )
+
+
+
+        function increasePriceByPercentage(category, percentage, operationType){
             $.get(api + 'inventory/products/'+ category, function (data) {
               
                 console.log('this is the percentage increase'+percentage)
                
-                let increase = percentage/100
+                let increase = percentage/100;  
                 let products = [...data];
                 let count = 0;
                 products.forEach((product, index) => {
                   
                     console.log('this is the old price'+product.price)
-                    
-                    product.price = Math.ceil((product.price)*(1+increase)/100)*100 ;
+                    if(operationType == "increase"){
+                        product.price = Math.ceil((product.price)*(1+increase)/100)*100 ;
+                    }
+
+                    if(operationType == "decrease"){
+                        product.price = Math.floor((product.price)*(1-increase)/100)*100
+                    }
                    
+                    
                     console.log('this is the new price'+ product.price)
 
                     $.ajax({
