@@ -12,6 +12,8 @@ let state = [];
 let sold_items = [];
 let item;
 let salesItem;
+let categoryToReload= '';
+let desiredCategory='';
 let auth;
 let holdOrder = 0;
 let vat = 0;
@@ -260,7 +262,7 @@ if (auth == undefined) {
                
                 data.forEach(item => {
                 let  price = parseFloat(item.price);
-                     item.price = numberWithCommas(price);
+                     item.price = price;
                 });
 
                 allProducts = [...data];
@@ -310,11 +312,11 @@ if (auth == undefined) {
                   
                     console.log('this is the old price'+product.price)
                     if(operationType == "increase"){
-                        product.price = Math.ceil((product.price)*(1+increase)/100)*100 ;
+                        product.price = Math.ceil((product.price)*(1+increase)/500)*500 ;
                     }
 
                     if(operationType == "decrease"){
-                        product.price = Math.floor((product.price)*(1-increase)/100)*100
+                        product.price = Math.floor((product.price)*(1-increase)/500)*500
                     }
                    
                     
@@ -383,7 +385,7 @@ if (auth == undefined) {
                     <td>${product.stock}</td>
                     <td>${product.quantity}</td>
                     <td>${category.length > 0 ? category[0].name : ''}</td>
-                    <td class="nobr"><span class="btn-group"><button onClick="$(this).editProductUsingId('${product._id}')" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteProduct('${product._id}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button></span></td></tr>`;
+                    <td class="nobr"><span class="btn-group"><button onClick="$(this).editProductUsingId('${product._id}','${product.category}')" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteProduct('${product._id}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button></span></td></tr>`;
         
                         if (counter == products.length) {
         
@@ -521,7 +523,7 @@ function searchSingleProduct() {
     
        if($("#searchSingleProduct").val().length > 2){
         $('#productParent').empty();
-      //  $('#searchProductList').DataTable().destroy();
+        $('#searchProductList').DataTable().destroy();
     
            let searchQuery = $("#searchSingleProduct").val();
     
@@ -547,23 +549,69 @@ function searchSingleProduct() {
                        let category = allCategories.filter(function (category) {
                         return category._id == item.category;
                     });
-           let itemID = item._id;
+                   let itemID = item._id;
                   single_product_info += `<tr>
-                       <td>${item.barcode}</td>
+                       <td><img id="`+ item.barcode + `"></td>
                        <!--td><img style="max-height: 50px; max-width: 30px; border: 1px solid #ddd;" src="${item.img == "" ? "./assets/images/default.jpg" : img_path + item.img}" id="product_img"></td-->
                        <td>${item.name}</td>
                        <td>${settings.symbol}${item.price}</td>
                        <td>${item.stock}</td>
                        <td>${item.quantity}</td>
                        <td>${category.length > 0 ? category[0].name : ''}</td>
-                       <td class="nobr"><span class="btn-group"><button onClick="$(this).editProductUsingId('${itemID}')" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteProduct('${item._id}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button></span></td></tr>`;
+                       <td class="nobr"><span class="btn-group"><button onClick="$(this).editProductUsingId('${itemID}','${item.category}')" class="btn btn-warning btn-sm"><i class="fa fa-edit"></i></button><button onClick="$(this).deleteProduct('${item._id}')" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i></button></span></td></tr>`;
                     //   $('#productParent').append(single_product_info);
                        $('#productParent').html(single_product_info);  
+                       $('#searchProductList').DataTable({
+                        "order": [[1, "desc"]]
+                        , "autoWidth": false
+                        , "retrieve": true
+                        , "info": true
+                        , "JQueryUI": true
+                        , "ordering": true
+                        , "paging": true,
+                        "dom": 'Bfrtip',
+                        "buttons": ['csv', 'excel', 'pdf',]
+
+                    });
+
+                    data.forEach(pro => {
+                        $("#" + pro.barcode + "").JsBarcode(pro.barcode, {
+                            width: 2,
+                            height: 25,
+                            fontSize: 14
+                        });
+                    });
                    });
 
                });  
            }
        }
+
+       $('#print_list').click(function () {
+
+        $("#loading").show();
+
+        $('#searchProductList').DataTable().destroy();
+
+        const filename = 'productList.pdf';
+
+        html2canvas($('#productParent').get(0)).then(canvas => {
+            let height = canvas.height * (25.4 / 96);
+            let width = canvas.width * (25.4 / 96);
+            let pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, width, height);
+
+            $("#loading").hide();
+            pdf.save(filename);
+        });
+
+        $(".loading").hide();
+
+    });
+
+
+
+       
 
  let $searchSingleProduct = $("#searchSingleProduct").on('input', function(){
         searchSingleProduct();       
@@ -639,7 +687,7 @@ function searchSingleProduct() {
             internetAvailable();
 
             if (stock == 1) {
-                if (count > 0) {
+                
                    
                     $.get(api + 'inventory/product/' + id, function (data) {
                     //the output returns an array, so we are pulling the first item, 
@@ -649,18 +697,18 @@ function searchSingleProduct() {
 
                         $(this).addProductToCart(data);
                     });
-                }
-                else {
-                    Swal.fire(
-                        'Out of stock!',
-                        'This item is currently unavailable',
-                        'info'
-                    );
-                }
+                
+                // else {
+                //     Swal.fire(
+                //         'Out of stock!',
+                //         'This item is currently unavailable',
+                //         'info'
+                //     );
+                // }
             }
             else {
                 $.get(api + 'inventory/product/' + id, function (data) {
-                    $(this).addProductToCart(data[0]);
+                    $(this).addProductToCart(data);
                 });
             }
 
@@ -689,7 +737,7 @@ function searchSingleProduct() {
                 processData: false,
                 success: function (data) {
 
-                    if (data._id != undefined && data.quantity >= 1) {
+                    if (data._id != undefined) {
                         $(this).addProductToCart(data);
                         $("#searchBarCode").get(0).reset();
                         $("#basic-addon2").empty();
@@ -763,7 +811,7 @@ function searchSingleProduct() {
         $.fn.addProductToCart = function (data) {
 
 
-            
+
             item = {
                 id: data._id,
                 itemId: data.itemId,
@@ -1407,8 +1455,8 @@ function searchSingleProduct() {
             let discount = $("#inputDiscount").val();
             let customer = JSON.parse($("#customer").val());
             let date = moment(currentTime).format("YYYY-MM-DD HH:mm:ss");
-            let paid = $("#payment").val() == "" ? "" : parseFloat($("#payment").val()).toFixed(2);
-            let change = $("#change").text() == "" ? "" : parseFloat($("#change").text()).toFixed(2);
+            let paid = $("#payment").val() == "" ? "" : numberWithCommas(parseFloat($("#payment").val()).toFixed(2));
+            let change = $("#change").text() == "" ? "" : numberWithCommas(parseFloat($("#change").text()).toFixed(2));
             let refNumber = $("#refNumber").val();
             let salesCustomer = $("#salesCustomerName").val();
             let phoneNumber = $("#salesCustomerPhone").val();
@@ -1437,13 +1485,13 @@ function searchSingleProduct() {
                 payment = `<tr>
                         <td>Paid</td>
                         <td>:</td>
-                        <td>${paid}</td>
+                        <td>${numberWithCommas(paid)}</td>
                     </tr>
 
                     <tr>
                         <td>Change</td>
                         <td>:</td>
-                        <td>${Math.abs(change).toFixed(2)}</td>
+                        <td>${numberWithCommas(Math.abs(change).toFixed(2))}</td>
                     </tr>
                     <tr>
                         <td>Method</td>
@@ -2162,9 +2210,9 @@ if(!savedOrder){
                 console.log('this is the network status'+network_status);
                 console.log('this is a recalled transaction'+isRecalledTransaction)
                 if(isRecalledTransaction){
-                    $(this).submitDueOrderOnline(1);
+                    $(this).submitDueOrderOffline(1);
             }else{
-                    $(this).submitDueOrderOnline(1);
+                    $(this).submitDueOrderOffline(1);
                 }
             }
         });
@@ -2187,9 +2235,15 @@ if(!savedOrder){
 
         });
         $('#categorysales').click(function () {
-         //   loadTransactions();
-            
-            loadUserList();
+            let cashiers = []
+            allTransactions.forEach((transaction,index)=>{
+                if(!cashiers.includes(transaction.user_id)){
+                    cashiers.push(transaction.user_id)
+                }
+             })
+            $('#sold_categories_view').show();
+            loadUserList(); 
+            userFilterForCategories(cashiers);
             console.log('loading category list')
             $('#sold_categories_view').show();
             $('#pos_view').hide();
@@ -2300,11 +2354,15 @@ if(!savedOrder){
             $(this).ajaxSubmit({
                 contentType: 'application/json',
                 success: function (response) {
-
+                    loadAllProducts();
+                  //  loadProductList();
+                    searchSingleProduct();
+                    loadProductsByCategory(categoryToReload);
                     $('#saveProduct').get(0).reset();
                     $('#current_img').text('');
 
                     loadProducts();
+                    
                     Swal.fire({
                         title: 'Product Saved',
                         text: "Select an option below to continue.",
@@ -2540,6 +2598,33 @@ if(!savedOrder){
           }
 
          
+          $('#deleteAllCategories').click(function () {
+
+            user = storage.get('user');
+            Swal.fire({
+                title: 'All categories will be deleted! Irreversibly!',
+                confirmButtonText: 'Continue',
+                icon: 'warning',
+                cancelButtonText: 'Close',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                focusConfirm: false,
+              
+              }).then((result) => {
+                    console.log('user authenticated');
+                    $.fn.deleteAllCategories();
+                    loadUserList();
+                    $('#pos_view').show();
+                    $('#deleteAllTransactions').hide();
+                    $('#pointofsale').hide();
+                    $('#transactions_view').hide();
+                    $(this).hide();
+              })
+
+           
+        });
+
 
       
         $('#saveCategory').submit(function (e) {
@@ -2667,8 +2752,9 @@ if(!savedOrder){
             $('#newProduct').modal('show');
         }
 
-        $.fn.editProductUsingId = function (productId) {
+        $.fn.editProductUsingId = function (productId,categoryId) {
           console.log('this is the product id'+productId)
+        categoryToReload = categoryId;
         let letSearchProduct= allProducts.filter(function (product) {
                 return product._id == productId;
             });
@@ -3406,40 +3492,40 @@ if(!savedOrder){
     });
 
 
-    $('#print_list').click(function () {
+    // $('#print_list').click(function () {
 
-        $("#loading").show();
+    //     $("#loading").show();
 
-        $('#productList').DataTable().destroy();
+    //     $('#productList').DataTable().destroy();
 
-        const filename = 'productList.pdf';
+    //     const filename = 'productList.pdf';
 
-        html2canvas($('#all_products').get(0)).then(canvas => {
-            let height = canvas.height * (25.4 / 96);
-            let width = canvas.width * (25.4 / 96);
-            let pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, width, height);
+    //     html2canvas($('#all_products').get(0)).then(canvas => {
+    //         let height = canvas.height * (25.4 / 96);
+    //         let width = canvas.width * (25.4 / 96);
+    //         let pdf = new jsPDF('p', 'mm', 'a4');
+    //         pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, width, height);
 
-            $("#loading").hide();
-            pdf.save(filename);
-        });
+    //         $("#loading").hide();
+    //         pdf.save(filename);
+    //     });
 
 
 
-        $('#productList').DataTable({
-            "order": [[1, "desc"]]
-            , "autoWidth": false
-            , "info": true
-            , "JQueryUI": true
-            , "ordering": true
-            , "paging": false,
-            "dom": 'Bfrtip',
-            "buttons": ['csv', 'excel', 'pdf',]
-        });
+    //     $('#productList').DataTable({
+    //         "order": [[1, "desc"]]
+    //         , "autoWidth": false
+    //         , "info": true
+    //         , "JQueryUI": true
+    //         , "ordering": true
+    //         , "paging": false,
+    //         "dom": 'Bfrtip',
+    //         "buttons": ['csv', 'excel', 'pdf',]
+    //     });
 
-        $(".loading").hide();
+    //     $(".loading").hide();
 
-    });
+    // });
 
 }
 
@@ -3633,7 +3719,7 @@ function loadTransacts() {
 
 
  $("#salescategoryselect").on('input' , function(){
-    let desireCategory = $('#salescategoryselect').val()
+    desiredCategory = $('#salescategoryselect').val()
     start_date = moment($('#categoryStartDate').val())
     end_date = moment($('#categoryEndDate').val())
     console.log('these are the dates'+start_date)
@@ -3641,14 +3727,15 @@ function loadTransacts() {
     if(start_date ==''|| end_date ==''){
         alert('please input start and end dates!')
     }else{
-        showSalesByCategory(desireCategory, start_date, end_date)    
+        showSalesByCategory()    
     }
 
      
 });
 
-function showSalesByCategory(chosenCategory,start_date,end_date) {
+function showSalesByCategory() {
 
+    console.log('these are inputs'+desiredCategory+'and'+start_date+'and'+end_date)
     document.getElementById("categoryStartDateLabel").textContent = moment(start_date).format('DD-MMM-YYYY, HH:mm:ss')
     document.getElementById("categoryEndDateLabel").textContent=moment(end_date).format('DD-MMM-YYYY, HH:mm:ss');
     let tills = [];
@@ -3659,7 +3746,10 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
     let counter = 0;
     let soldItems = [];
     let totalForChosenCategory = 0;
+    let chosenCategory = desiredCategory;
    // let categoryName = '';
+   $('#required_categories_sales_list').empty();
+   $('#requiredCategorySalesList').DataTable().destroy();
   
     let query = `by-date?start=${start_date}&end=${end_date}&user=${by_user}&status=${by_status}&till=${by_till}`;
 
@@ -3668,8 +3758,7 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
         if (transactions.length > 0) {
             allTransactions = [...transactions];
         console.log('this is the number of transactions'+allTransactions)
-            $('#required_categories_sales_list').empty();
-            $('#requiredCategorySalesList').DataTable().destroy();
+         
 
     //getting the transaction items
     allTransactions.forEach((transaction,index)=>{
@@ -3706,6 +3795,7 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
         let thisCategorySales = 0;
         let thisCategoryCount = 0;
         let thisCategoryTax =0;
+        let categoryName = '';
 
      //   console.log("this is sold category"+soldCategory)
      //   console.log('this are all the categories'+JSON.stringify(allCategories))
@@ -3713,7 +3803,10 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
             return selected._id == soldCategory
         })
 
-        let categoryName = category[0].name;
+        if(category.length>0){
+            categoryName = category[0].name;
+        }
+        
 
         soldItems.forEach((item,index)=>{
             if(item.category == soldCategory){
@@ -3807,7 +3900,7 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
                 </tr>`
             }        
             if (by_user == 0 && by_till == 0) {
-                userFilterCategories(users)
+                userFilterForCategories(users)
                 tillFilter(tills);
             }
         document.getElementById('getcategorysalesitems').reset();
@@ -3825,6 +3918,7 @@ function showSalesByCategory(chosenCategory,start_date,end_date) {
 
         });
     }
+    
     })
  }
 
@@ -3887,12 +3981,15 @@ function loadSoldCategoryList() {
         let thisCategorySales = 0;
         let thisCategoryCount = 0;
         let thisCategoryTax =0;
+        let categoryName = 0;
 
         let category = allCategories.filter((selected,index)=>{
             return selected._id == soldCategory
         })
-
-        let categoryName = category[0].name;
+        if(category.length>0){
+             categoryName = category[0].name;
+        }
+        
         
         console.log('this is the category name'+categoryName)
 
@@ -3994,7 +4091,7 @@ function loadSoldCategoryList() {
         console.log('this is main total'+numberWithCommas(totalForAll))
        
         if (by_user == 0 && by_till == 0) {
-            userFilterCategories(users)
+            userFilterForCategories(users)
             tillFilter(tills);
         }
         
@@ -4028,6 +4125,10 @@ function loadTransactions() {
     let totalTax = 0;
     let transact = 0;
     let unique = 0;
+    let taxableAmount = 0;
+    let nonTaxableAmount=0; 
+    let totalReportSales = 0;
+    let totalReportTax =0;
 
     sold_items = [];
     sold = [];
@@ -4036,12 +4137,14 @@ function loadTransactions() {
     let errCount = 0;
     let transaction_list = '';
     let transaction_summary = '';
+    let transactionSoldItems= [];
 
 
     let query = `by-date?start=${start_date}&end=${end_date}&user=${by_user}&status=${by_status}&till=${by_till}`;
 
 
     $.get(api + query, function (transactions) {
+        let transactionItems = [];
      //   console.log('these are all transactions' + JSON.stringify(transactions))
         if (transactions.length > 0) {
             $('#transaction_list').empty();
@@ -4053,10 +4156,9 @@ function loadTransactions() {
 
             transactions.forEach((trans, index) => {
                 if(trans.flag =='Connected'){
-
                 sales += parseFloat(trans.total);
-
                 totalTax += parseFloat(trans.tax)
+                transactionItems.push(trans.item);
 
              //  console.log('transaction no '+index+' sale '+sales+'transaction flag '+trans.flag)
 
@@ -4069,13 +4171,12 @@ function loadTransactions() {
                 }else{
                     transact++;
                     sales += parseFloat(trans.total);
-                    totalTax += parseFloat(trans.tax)
-
-             //   console.log('transaction no'+index+'sale'+sales+'transaction flag'+trans.flag)
-
+                    totalTax += parseFloat(trans.tax);
+                    transactionItems.push(trans.item);
                 }
             } 
                  
+            console.log('these are all the items in this transaction '+ JSON.stringify(trans.items))
 
                 trans.items.forEach(item => {
 
@@ -4083,14 +4184,9 @@ function loadTransactions() {
                         sold_items.push(item);
                     }
 
-                    if(trans.flag == 'Error' && trans.saved != 'true'){
-                        if(errCount < 10){
-                            
-                            sold_items.push(item);
-                        }
+                    if(trans.flag == 'Error' && trans.saved != 'true'){      
+                        sold_items.push(item); 
                     }
-                   
-
                 });
 
                 
@@ -4106,16 +4202,17 @@ function loadTransactions() {
 
                 counter++;
 
-               let items = trans.items;
+            //    let items = trans.items;
 
-               let  transactionItems= [];
+            //    let  transactionItems= [];
 
-               items.forEach(item=>{
+            //    items.forEach(item=>{
 
-                let category = allCategories.filter(function (category) {
-                    return category._id == item.category;
-                });                })
+            //     let category = allCategories.filter(function (category) {
+            //         return category._id == item.category;
+            //     });                })
                 
+            
                
             if(trans.flag == 'Connected'){
                 transaction_list += `<tr>
@@ -4157,7 +4254,7 @@ function loadTransactions() {
                 }
             
                 if (counter == transactions.length) {
-
+                    
                     $('#total_sales_1 #counter').text(numberWithCommas(parseFloat(sales).toFixed(2)));
                     $('#total_transactions_1 #counter').text(transact);
                     $('#total_tax_payable #counter').text(numberWithCommas(parseFloat(totalTax).toFixed(2)));
@@ -4215,7 +4312,69 @@ function loadTransactions() {
                         userFilter(users);
                         tillFilter(tills);
                     }
+
+                    console.log('total sales before looping '+totalReportSales)
                 
+                    sold.forEach((item, index) => {
+
+                        if(item.itemId == 0){
+                           taxableAmount += (item.qty) * parseFloat(item.price); 
+                           totalReportSales += parseInt(item.price) * (item.qty); //parse int is necessary for correctness
+                            totalReportTax += (15/115)*parseFloat(item.price)*item.qty
+                        }
+                        
+                        if(item.itemId !=0){
+                            nonTaxableAmount += parseInt(item.price) * (item.qty);
+                           totalReportSales +=  (item.qty) * parseInt(item.price);//parseInt ensures the correctness of the total
+                          
+                        }
+                    })
+
+                    let currentTime = new Date(moment());
+        $('#printTaxReport').click(function(){
+            taxReportReceipt = `<div style="font-size: 13px;">                            
+            <p style="text-align: center;">
+            ${settings.img == "" ?'<img style="max-width: 50px;max-width: 50px;" src ="assets/images/zrb_logo.png" /><br>' : '<img style="max-width: 50px;max-width: 50px;" src ="assets/images/zrb_logo.png" /><br>'}
+                <span style="font-size: 13px;">TAX PAYER: ${settings.store}</span> <br>
+                Z NUMBER:  ${settings.zNumber} <br>
+                TIN:  ${settings.tinNumber}<br>
+                VRN: ${settings.vrnNumber} <br>
+                STREET: ${settings.address_one}
+                </p>
+                <hr>
+            <left>
+                <p>
+                Date :  ${moment(currentTime).format('DD MMM YYYY HH:mm:ss')} <br>
+                From : ${moment(start_date).format('DD MMM YYYY HH:mm:ss')} To ${moment(end_date).format('DD MMM YYYY HH:mm:ss')} <br>
+                Report Currency : ${" "+settings.symbol} <br>
+                Number of Sales : ${" "+transact}<br>
+                Taxable Amount : ${" "+numberWithCommas(taxableAmount)} <br>
+                Non Taxable : ${" "+numberWithCommas(nonTaxableAmount)} <br>
+                Total Tax Exclusive : ${" "+numberWithCommas(totalReportSales.toFixed(2)-totalReportTax.toFixed(2))} <br>
+                Tax Amount : ${" "+numberWithCommas(totalTax.toFixed(2))} <br>
+                Total : ${" "+numberWithCommas(totalReportSales)} <br>
+                </p>
+
+            </left>
+            <hr>
+
+                <br>
+                </div>`;
+
+            $('#viewTransaction').html('');
+            $('#viewTransaction').html(taxReportReceipt);
+
+            $('#orderModal').modal('show');
+
+        }
+
+)
+
+                    console.log('these is the taxable amount: '+taxableAmount);
+                    console.log('these is the non taxable amount: '+nonTaxableAmount);
+                    console.log('these is the total sales amount: '+totalReportSales);
+                    console.log('these is the total tax amount: '+totalReportTax.toFixed(2));
+                    console.log('these is the number of transactions: '+transact);
                     $('#transaction_list').html(transaction_list);
                     $('#transactionList').DataTable({
                         "order": [[1, "desc"]]
@@ -4233,6 +4392,7 @@ function loadTransactions() {
                     
                 }
             });
+            
         }
         else {
             Swal.fire(
@@ -4276,7 +4436,7 @@ function userFilter(users) {
 
 }
 
-function userFilterCategories(users) {
+function userFilterForCategories(users) {
 
     $('#usersOnCategory').empty();
     $('#usersOnCategory').append(`<option value="0">All</option>`);
@@ -4510,24 +4670,24 @@ $('#applydaterange').click(function () {
 
 $('#tills').change(function () {
     by_till = $(this).find('option:selected').val();
-    loadSoldCategoryList();
+    showSalesByCategory();
 });
 
 
 $('#usersOnCategory').change(function () {
     by_user = $(this).find('option:selected').val();
-    loadSoldCategoryList();
+    showSalesByCategory();
 });
 
 $('#salescategoryrange').click(function(){
-    let desireCategory = $('#salescategoryselect').val()
+    desiredCategory = $('#salescategoryselect').val()
     start_date = moment($('#categoryStartDate').val())
     end_date = moment($('#categoryEndDate').val())
    
     if(start_date ==''|| end_date ==''){
         alert('please input start and end dates!')
     }else{
-        showSalesByCategory(desireCategory,start_date, end_date)    
+        showSalesByCategory();    
     }
 
 })
